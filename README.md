@@ -2,7 +2,10 @@
 
 Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis, and host-based site routing.
 
-Image: `ghcr.io/shubkb07/wp-local:0.0.3-alpha`
+Images:
+
+- `ghcr.io/shubkb07/wp-local:0.0.3-alpha`
+- `shubkb07/wp-local:0.0.3-alpha`
 
 ## Install
 
