@@ -1,0 +1,7 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: images/web/Dockerfile
+      args:
+        VERSION: 0.0.1-alpha

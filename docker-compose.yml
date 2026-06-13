@@ -1,0 +1,19 @@
+services:
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.1-alpha}
+    container_name: ${CONTAINER_NAME:-local-wp-web}
+    restart: unless-stopped
+    ports:
+      - "${APACHE_HTTP_PORT:-8080}:80"
+    environment:
+      MYSQL_USER: ${MYSQL_USER:-root}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-local_root_password}
+      SITES: ${SITES:-apple.local,meow.local}
+    volumes:
+      - ${WP_SITES_PATH:-./data/wp-sites}:/data/wp-sites
+      - db-data:/var/lib/mysql
+      - redis-data:/var/lib/redis
+
+volumes:
+  db-data:
+  redis-data:

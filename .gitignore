@@ -1,0 +1,6 @@
+data/wp-sites/
+.DS_Store
+*.log
+task.md
+.agents/
+.codex/

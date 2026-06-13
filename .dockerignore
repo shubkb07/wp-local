@@ -1,0 +1,15 @@
+*
+!images/
+!images/**
+!data/
+data/*
+!data/wp-comman/
+data/wp-comman/*
+!data/wp-comman/wp-config.php
+!data/wp-comman/wp-resolve/
+!data/wp-comman/wp-resolve/**
+!data/wp-comman/adminer/
+!data/wp-comman/adminer/**
+!docker-compose.yml
+!.env
+!README.md
