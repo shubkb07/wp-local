@@ -1,0 +1,255 @@
+#!/bin/sh
+set -eu
+
+mysql_user="${MYSQL_USER:-root}"
+mysql_password="${MYSQL_PASSWORD:-local_root_password}"
+env_file="${LOCAL_WP_ENV_FILE_IN_CONTAINER:-/data/.env}"
+wp_path="/var/www/html"
+wp_sites_path="/data/wp-sites"
+allow_file="/etc/apache2/conf-enabled/local-sites-allow.conf"
+
+usage() {
+	cat <<'EOF'
+Usage:
+  wpl clone --from=source.local --to=target.local [--force]
+  wpl clone --from=source.local to=target.local [--force]
+EOF
+}
+
+normalize_host() {
+	host=$(printf '%s' "$1" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+
+	case "$host" in
+		''|*[!a-z0-9.-]*)
+			return 1
+			;;
+	esac
+
+	printf '%s' "$host"
+}
+
+database_name_for_site() {
+	printf '%s' "$1" | sed 's/-/__/g; s/\./_/g'
+}
+
+site_list_from_env_file() {
+	if [ -f "$env_file" ]; then
+		sed -n 's/^SITES=//p' "$env_file" | tail -n 1
+	else
+		printf '%s' "${SITES:-}"
+	fi
+}
+
+site_in_csv() {
+	needle="$1"
+	csv="$2"
+
+	printf '%s\n' "$csv" | tr ',' '\n' | while IFS= read -r site; do
+		site=$(normalize_host "$site" 2>/dev/null || true)
+		[ -n "$site" ] || continue
+		if [ "$site" = "$needle" ]; then
+			printf 'found\n'
+			break
+		fi
+	done
+}
+
+append_site_to_env() {
+	target="$1"
+
+	if [ ! -f "$env_file" ]; then
+		printf 'wpl: %s is not mounted; cannot update SITES.\n' "$env_file" >&2
+		return 0
+	fi
+
+	current_sites=$(site_list_from_env_file)
+	if [ "$(site_in_csv "$target" "$current_sites")" = "found" ]; then
+		return 0
+	fi
+
+	tmp_file=$(mktemp)
+	if grep -q '^SITES=' "$env_file"; then
+		if [ -n "$current_sites" ]; then
+			next_sites="${current_sites},${target}"
+		else
+			next_sites="${target}"
+		fi
+
+		awk -v sites="SITES=${next_sites}" '
+			BEGIN { replaced = 0 }
+			/^SITES=/ {
+				if (!replaced) {
+					print sites
+					replaced = 1
+				}
+				next
+			}
+			{ print }
+		' "$env_file" > "$tmp_file"
+	else
+		cat "$env_file" > "$tmp_file"
+		printf '\nSITES=%s\n' "$target" >> "$tmp_file"
+	fi
+
+	cat "$tmp_file" > "$env_file"
+	rm -f "$tmp_file"
+}
+
+site_hostnames() {
+	site_list_from_env_file | tr ',' '\n' | while IFS= read -r site; do
+		site=$(normalize_host "$site" 2>/dev/null || true)
+		[ -n "$site" ] || continue
+		printf '%s\n' "$site"
+	done | paste -sd ' ' -
+}
+
+refresh_runtime_config() {
+	hostnames=$(site_hostnames)
+	username=$(whoami)
+	nginx_include_path='$(pwd)/data/local-wildcard.conf'
+
+	mkdir -p /data "$(dirname "$allow_file")"
+
+	sed \
+		-e "s/{{hostnames with space separated}}/${hostnames}/g" \
+		-e "s/{{username}}/${username}/g" \
+		/usr/src/local-wp/templates/local-wildcard.conf > /data/local-wildcard.conf
+
+	sed \
+		-e "s/{{hostnames with space separated}}/${hostnames}/g" \
+		-e "s#{{nginx include path}}#${nginx_include_path}#g" \
+		/usr/src/local-wp/templates/make-changes.md > /data/make-changes.md
+
+	tmp_hosts=$(mktemp)
+	sed '/# wp-local start/,/# wp-local end/d' /etc/hosts > "$tmp_hosts"
+	{
+		printf '\n# wp-local start\n'
+		printf '127.0.0.1 %s\n' "$hostnames"
+		printf '::1 %s\n' "$hostnames"
+		printf '# wp-local end\n'
+	} >> "$tmp_hosts"
+	cat "$tmp_hosts" > /etc/hosts
+	rm -f "$tmp_hosts"
+
+	: > "$allow_file"
+	printf '%s\n' "$hostnames" | tr ' ' '\n' | while IFS= read -r site; do
+		[ -n "$site" ] || continue
+		escaped_site=$(printf '%s' "$site" | sed 's/\./\\./g')
+		db_name=$(database_name_for_site "$site")
+		printf 'SetEnvIfNoCase Host "^%s(:[0-9]+)?$" ALLOWED_SITE=1 ADMINER_SERVER=127.0.0.1 ADMINER_USER=%s ADMINER_DB=%s\n' "$escaped_site" "$mysql_user" "$db_name" >> "$allow_file"
+	done
+
+	apache2ctl graceful >/dev/null 2>&1 || true
+}
+
+database_exists() {
+	database="$1"
+	[ "$(mysql -uroot -p"$mysql_password" -N -B -e "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '${database}'" | wc -l)" -gt 0 ]
+}
+
+database_has_tables() {
+	database="$1"
+	[ "$(mysql -uroot -p"$mysql_password" -N -B -e "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '${database}'")" -gt 0 ]
+}
+
+clone_site() {
+	from=''
+	to=''
+	force='false'
+
+	for arg in "$@"; do
+		case "$arg" in
+			--from=*)
+				from=${arg#--from=}
+				;;
+			from=*)
+				from=${arg#from=}
+				;;
+			--to=*)
+				to=${arg#--to=}
+				;;
+			to=*)
+				to=${arg#to=}
+				;;
+			--force)
+				force='true'
+				;;
+			*)
+				printf 'wpl: unknown argument: %s\n' "$arg" >&2
+				usage >&2
+				exit 2
+				;;
+		esac
+	done
+
+	from=$(normalize_host "$from") || { printf 'wpl: invalid --from host.\n' >&2; exit 2; }
+	to=$(normalize_host "$to") || { printf 'wpl: invalid --to host.\n' >&2; exit 2; }
+
+	if [ "$from" = "$to" ]; then
+		printf 'wpl: --from and --to must be different.\n' >&2
+		exit 2
+	fi
+
+	from_db=$(database_name_for_site "$from")
+	to_db=$(database_name_for_site "$to")
+	from_dir="${wp_sites_path}/${from}"
+	to_dir="${wp_sites_path}/${to}"
+
+	if ! database_exists "$from_db"; then
+		printf 'wpl: source database %s does not exist.\n' "$from_db" >&2
+		exit 1
+	fi
+
+	if [ ! -d "$from_dir" ]; then
+		printf 'wpl: source site folder %s does not exist.\n' "$from_dir" >&2
+		exit 1
+	fi
+
+	if [ -d "$to_dir" ] || database_exists "$to_db"; then
+		if [ "$force" != 'true' ]; then
+			printf 'wpl: target %s already exists; nothing changed. Use --force to replace it.\n' "$to"
+			exit 0
+		fi
+
+		mysql -uroot -p"$mysql_password" -e "DROP DATABASE IF EXISTS \`${to_db}\`;"
+		rm -rf "$to_dir"
+	fi
+
+	mysql -uroot -p"$mysql_password" -e "CREATE DATABASE \`${to_db}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+	mysqldump -uroot -p"$mysql_password" "$from_db" | mysql -uroot -p"$mysql_password" "$to_db"
+
+	mkdir -p "$(dirname "$to_dir")"
+	cp -a "$from_dir" "$to_dir"
+	chown -R www-data:www-data "$to_dir"
+
+	append_site_to_env "$to"
+	SITES=$(site_list_from_env_file)
+	export SITES
+	refresh_runtime_config
+
+	if ! database_has_tables "$to_db"; then
+		printf 'wpl: cloned files and database; skipped search-replace because %s has no WordPress tables yet.\n' "$to"
+	elif wp --path="$wp_path" --url="$to" --allow-root core is-installed >/dev/null 2>&1; then
+		wp --path="$wp_path" --url="$to" --allow-root search-replace "$from" "$to" --all-tables --precise
+	else
+		printf 'wpl: cloned files and database; skipped search-replace because %s is not installed yet.\n' "$to"
+	fi
+
+	printf 'wpl: cloned %s to %s.\n' "$from" "$to"
+}
+
+command="${1:-}"
+case "$command" in
+	clone)
+		shift
+		clone_site "$@"
+		;;
+	-h|--help|help|'')
+		usage
+		;;
+	*)
+		printf 'wpl: unknown command: %s\n' "$command" >&2
+		usage >&2
+		exit 2
+		;;
+esac

@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis,
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.4-alpha`
-- `shubkb07/wp-local:0.0.4-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.5-alpha`
+- `shubkb07/wp-local:0.0.5-alpha`
 
 ## Install
 
@@ -35,9 +35,10 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.4-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.5-alpha
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
+LOCAL_WP_ENV_FILE=./.env
 MYSQL_USER=root
 MYSQL_PASSWORD=local_root_password
 SITES=apple.local,meow.local
@@ -62,6 +63,15 @@ WP-CLI is installed in the image:
 ```sh
 docker compose exec web wp --info --allow-root
 ```
+
+Clone a local site with `wpl`:
+
+```sh
+docker compose exec web wpl clone --from=neuro-ai.local to=neuroai.local
+docker compose exec web wpl clone --from=neuro-ai.local --to=neuroai.local --force
+```
+
+`wpl clone` copies the source database and `data/wp-sites/{host}` folder, appends the target host to `.env` `SITES`, refreshes generated local helper files, and runs WP-CLI search-replace when the cloned site is already installed.
 
 ## Local Image Build
 

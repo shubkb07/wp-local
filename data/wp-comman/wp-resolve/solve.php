@@ -15,6 +15,22 @@ if ($host === '' || !preg_match('/^[a-z0-9.-]+$/', $host)) {
 }
 
 $sites = getenv('SITES') ?: '';
+$env_file = '/data/.env';
+
+if (is_readable($env_file)) {
+    $env_lines = file($env_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+
+    foreach ($env_lines ?: array() as $env_line) {
+        $env_line = trim((string) $env_line);
+
+        if ($env_line === '' || str_starts_with($env_line, '#') || !str_starts_with($env_line, 'SITES=')) {
+            continue;
+        }
+
+        $sites = substr($env_line, 6);
+    }
+}
+
 $allowed_sites = array_filter(
 	array_map(
 		static function ($site) {
