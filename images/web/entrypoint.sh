@@ -19,6 +19,7 @@ cat > /usr/local/etc/php/conf.d/local-memory.ini <<INI
 memory_limit=${php_memory}
 upload_max_filesize=1024M
 post_max_size=1024M
+sendmail_path=/usr/bin/msmtp -t
 max_file_uploads=200
 max_execution_time=600
 max_input_time=600
@@ -37,6 +38,21 @@ net_write_timeout=600
 wait_timeout=28800
 interactive_timeout=28800
 CNF
+
+cat > /etc/msmtprc <<'MSMTP'
+defaults
+auth off
+tls off
+logfile /proc/self/fd/2
+
+account mailpit
+host 127.0.0.1
+port 1025
+from wp-local@localhost
+
+account default : mailpit
+MSMTP
+chmod 0644 /etc/msmtprc
 
 site_list() {
 	if [ -n "${SITES:-}" ]; then
@@ -241,6 +257,7 @@ if ! no_delete_all; then
 fi
 
 redis-server --daemonize yes
+mailpit --smtp 127.0.0.1:1025 --listen 127.0.0.1:8025 --webroot /mailpit &
 local-wp-cloudflared
 
 mkdir -p /var/www/html

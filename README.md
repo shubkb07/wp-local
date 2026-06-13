@@ -1,11 +1,11 @@
 # wp-local
 
-Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis, WP-CLI, cloudflared, and host-based site routing.
+Single-container local WordPress stack with Apache/PHP, Adminer, Mailpit, MariaDB, Redis, WP-CLI, cloudflared, and host-based site routing.
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.11-alpha`
-- `shubkb07/wp-local:0.0.11-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.12-alpha`
+- `shubkb07/wp-local:0.0.12-alpha`
 
 ## Requirements
 
@@ -56,7 +56,7 @@ https://meow.local
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.11-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.12-alpha
 
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
@@ -165,6 +165,20 @@ Large imports are supported up to `1G`. If you get `413 Request Entity Too Large
 docker compose restart web
 sudo nginx -t && sudo systemctl reload nginx
 ```
+
+## Mailpit
+
+Mailpit is available on every configured host:
+
+```text
+https://apple.local/mailpit
+```
+
+All PHP `mail()` traffic is routed to Mailpit through local SMTP on `127.0.0.1:1025`. WordPress password resets, plugin emails, WooCommerce emails, and any other PHP mail sent by any configured site are captured in the same local Mailpit dashboard.
+
+Mailpit storage is in-memory. Messages stay available while the container is running and are cleared on every container restart.
+
+No login is required. This is intentionally open for local development only.
 
 ## WP-CLI
 
