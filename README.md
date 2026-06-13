@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis,
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.6-alpha`
-- `shubkb07/wp-local:0.0.6-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.7-alpha`
+- `shubkb07/wp-local:0.0.7-alpha`
 
 ## Install
 
@@ -35,7 +35,7 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.6-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.7-alpha
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
 LOCAL_WP_ENV_FILE=./.env
@@ -45,7 +45,7 @@ SITES=apple.local,meow.local
 NO_DELETE_SITES=
 ```
 
-`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. Each site gets a bundled `twentytwentyfive` theme if it is missing. MariaDB and Redis data are stored in Docker volumes managed by Compose.
+`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. When a site's `wp-content` folder does not exist yet, wp-local creates `uploads`, `themes`, and `plugins`, then adds the bundled `twentytwentyfive` theme. Existing `wp-content` folders are left alone. MariaDB and Redis data are stored in Docker volumes managed by Compose.
 
 `LOCAL_WP_DATA_PATH` stores generated local helper files:
 

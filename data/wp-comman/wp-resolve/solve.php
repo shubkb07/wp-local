@@ -108,18 +108,28 @@ $mysqli->close();
 $site_dir = "/data/wp-sites/{$host}";
 $wp_content_dir = "{$site_dir}/wp-content";
 
-foreach (array($site_dir, $wp_content_dir, "{$wp_content_dir}/uploads", "{$wp_content_dir}/themes", "{$wp_content_dir}/plugins") as $directory) {
-    if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
-        http_response_code(500);
-        exit("Unable to create {$directory}.");
-    }
+if (!is_dir($site_dir) && !mkdir($site_dir, 0775, true) && !is_dir($site_dir)) {
+    http_response_code(500);
+    exit("Unable to create {$site_dir}.");
 }
 
 $default_theme_source = '/usr/src/local-wp/themes/twentytwentyfive';
 $default_theme_target = "{$wp_content_dir}/themes/twentytwentyfive";
 
-if (is_dir($default_theme_source) && !is_dir($default_theme_target)) {
-    copy_directory($default_theme_source, $default_theme_target);
+if (!file_exists($wp_content_dir)) {
+    foreach (array($wp_content_dir, "{$wp_content_dir}/uploads", "{$wp_content_dir}/themes", "{$wp_content_dir}/plugins") as $directory) {
+        if (!is_dir($directory) && !mkdir($directory, 0775, true) && !is_dir($directory)) {
+            http_response_code(500);
+            exit("Unable to create {$directory}.");
+        }
+    }
+
+    if (is_dir($default_theme_source)) {
+        copy_directory($default_theme_source, $default_theme_target);
+    }
+} elseif (!is_dir($wp_content_dir)) {
+    http_response_code(500);
+    exit("{$wp_content_dir} exists but is not a directory.");
 }
 
 $site_wp_config = "{$site_dir}/wp-config.php";
