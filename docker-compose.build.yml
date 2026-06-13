@@ -4,4 +4,4 @@ services:
       context: .
       dockerfile: images/web/Dockerfile
       args:
-        VERSION: 0.0.10-alpha
+        VERSION: 0.0.11-alpha

@@ -63,6 +63,22 @@ database_name_for_site() {
 	printf '%s' "$1" | sed 's/-/__/g; s/\./_/g'
 }
 
+host_username() {
+	username="${HOST_USERNAME:-}"
+
+	if [ -z "$username" ] && [ -e /data/.env ]; then
+		username=$(stat -c '%U' /data/.env 2>/dev/null || true)
+	fi
+
+	case "$username" in
+		''|'UNKNOWN'|'root')
+			username=$(whoami)
+			;;
+	esac
+
+	printf '%s' "$username"
+}
+
 no_delete_all() {
 	value=$(printf '%s' "${NO_DELETE_SITES:-}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
 	[ "$value" = "true" ] || [ "$value" = "1" ] || [ "$value" = "yes" ]
@@ -98,7 +114,7 @@ contains_word() {
 
 generate_local_files() {
 	hostnames=$(site_hostnames)
-	username=$(whoami)
+	username=$(host_username)
 	nginx_include_path='$(pwd)/data/local-wildcard.conf'
 
 	mkdir -p /data

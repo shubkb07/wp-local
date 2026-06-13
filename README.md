@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis,
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.10-alpha`
-- `shubkb07/wp-local:0.0.10-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.11-alpha`
+- `shubkb07/wp-local:0.0.11-alpha`
 
 ## Install
 
@@ -35,13 +35,14 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.10-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.11-alpha
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
 LOCAL_WP_ENV_FILE=./.env
 MYSQL_USER=root
 MYSQL_PASSWORD=local_root_password
 PHP_MEMORY=512M
+HOST_USERNAME=your-linux-username
 CLOUDFLARED_API_KEY=
 CLOUDFLARED_SITES=
 SITES=apple.local,meow.local
@@ -60,6 +61,8 @@ When `SITES` changes, restart the container to regenerate those files and clean 
 Use `NO_DELETE_SITES=true` to disable removed-site cleanup entirely. Use a comma-separated list, such as `NO_DELETE_SITES=meow.local,apple.local`, to protect only those removed sites from database and folder deletion.
 
 `PHP_MEMORY` controls PHP `memory_limit`; the image defaults to `512M`. PHP upload/import limits default to `1G`, with higher Apache/nginx/PHP/MariaDB timeouts for large WordPress/Adminer imports.
+
+`HOST_USERNAME` is used when generating `data/local-wildcard.conf` so nginx points at `/home/{user}/certs/_wildcard.local.pem`. Set it to the output of `whoami` on the host.
 
 `CLOUDFLARED_SITES` maps one-to-one with `SITES`. Leave an entry empty to skip that site, put `-` to create a random `trycloudflare.com` tunnel, or put a hostname to request that hostname. Examples:
 

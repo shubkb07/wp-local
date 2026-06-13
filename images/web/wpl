@@ -31,6 +31,22 @@ database_name_for_site() {
 	printf '%s' "$1" | sed 's/-/__/g; s/\./_/g'
 }
 
+host_username() {
+	username="${HOST_USERNAME:-}"
+
+	if [ -z "$username" ] && [ -e "$env_file" ]; then
+		username=$(stat -c '%U' "$env_file" 2>/dev/null || true)
+	fi
+
+	case "$username" in
+		''|'UNKNOWN'|'root')
+			username=$(whoami)
+			;;
+	esac
+
+	printf '%s' "$username"
+}
+
 site_list_from_env_file() {
 	if [ -f "$env_file" ]; then
 		sed -n 's/^SITES=//p' "$env_file" | tail -n 1
@@ -104,7 +120,7 @@ site_hostnames() {
 
 refresh_runtime_config() {
 	hostnames=$(site_hostnames)
-	username=$(whoami)
+	username=$(host_username)
 	nginx_include_path='$(pwd)/data/local-wildcard.conf'
 
 	mkdir -p /data "$(dirname "$allow_file")"
