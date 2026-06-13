@@ -58,10 +58,10 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
 
       - name: Update Docker Hub overview
-        uses: peter-evans/dockerhub-description@v4
+        uses: peter-evans/dockerhub-description@v5
         with:
           username: shubkb07
           password: ${{ secrets.DOCKER_PAT }}
           repository: shubkb07/wp-local
           readme-filepath: ./README.md
-          short-description: Single-container local WordPress stack with Apache, PHP, Adminer, Mailpit, MariaDB, Redis, WP-CLI, and cloudflared.
+          short-description: Single-container WordPress stack with Apache, PHP, Adminer, Mailpit, MariaDB, and Redis.
