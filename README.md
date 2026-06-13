@@ -35,6 +35,8 @@ WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.13-alpha
 WEB_IMAGE=shubkb07/wp-local:0.0.13-alpha
 ```
 
+Docker images are published to GitHub Container Registry and Docker Hub when a version tag is pushed. Docker Hub overview publishing uses the repository `README.md`; the GitHub secret `DOCKER_PAT` must be a Docker Hub personal access token with read, write, and delete permissions for the `shubkb07/wp-local` repository.
+
 ## Requirements
 
 - Docker with Compose v2

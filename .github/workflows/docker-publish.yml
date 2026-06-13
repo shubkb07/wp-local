@@ -8,6 +8,7 @@ on:
 env:
   GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
   DOCKERHUB_IMAGE_NAME: shubkb07/wp-local
+  DOCKERHUB_USERNAME: shubkb07
 
 jobs:
   publish:
@@ -33,7 +34,7 @@ jobs:
       - name: Login to Docker Hub
         uses: docker/login-action@v3
         with:
-          username: shubkb07
+          username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_PAT }}
 
       - name: Docker metadata
@@ -60,7 +61,7 @@ jobs:
       - name: Update Docker Hub overview
         uses: peter-evans/dockerhub-description@v5
         with:
-          username: shubkb07
+          username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKER_PAT }}
           repository: shubkb07/wp-local
           readme-filepath: ./README.md
