@@ -12,7 +12,6 @@ usage() {
 	cat <<'EOF'
 Usage:
   wpl clone --from=source.local --to=target.local [--force]
-  wpl clone --from=source.local to=target.local [--force]
 EOF
 }
 
@@ -162,14 +161,8 @@ clone_site() {
 			--from=*)
 				from=${arg#--from=}
 				;;
-			from=*)
-				from=${arg#from=}
-				;;
 			--to=*)
 				to=${arg#--to=}
-				;;
-			to=*)
-				to=${arg#to=}
 				;;
 			--force)
 				force='true'

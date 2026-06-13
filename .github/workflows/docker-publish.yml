@@ -2,11 +2,8 @@ name: Publish Docker Image
 
 on:
   push:
-    branches:
-      - master
     tags:
       - '*'
-  workflow_dispatch:
 
 env:
   GHCR_IMAGE_NAME: ghcr.io/${{ github.repository }}
@@ -47,7 +44,6 @@ jobs:
             ${{ env.GHCR_IMAGE_NAME }}
             ${{ env.DOCKERHUB_IMAGE_NAME }}
           tags: |
-            type=raw,value=0.0.5-alpha,enable=${{ github.ref == 'refs/heads/master' }}
             type=ref,event=tag
 
       - name: Build and push
@@ -57,6 +53,6 @@ jobs:
           file: images/web/Dockerfile
           push: true
           build-args: |
-            VERSION=0.0.5-alpha
+            VERSION=${{ github.ref_name }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

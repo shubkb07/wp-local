@@ -67,7 +67,7 @@ docker compose exec web wp --info --allow-root
 Clone a local site with `wpl`:
 
 ```sh
-docker compose exec web wpl clone --from=neuro-ai.local to=neuroai.local
+docker compose exec web wpl clone --from=neuro-ai.local --to=neuroai.local
 docker compose exec web wpl clone --from=neuro-ai.local --to=neuroai.local --force
 ```
 
