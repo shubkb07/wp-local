@@ -3,10 +3,21 @@ set -eu
 
 allow_file="/etc/apache2/conf-enabled/local-sites-allow.conf"
 mysql_password="${MYSQL_PASSWORD:-local_root_password}"
+php_memory="${PHP_MEMORY:-512M}"
 adminer_server="127.0.0.1"
 adminer_user="${MYSQL_USER:-root}"
 mkdir -p "$(dirname "$allow_file")" /data/wp-sites /run/mysqld /var/lib/mysql
 : > "$allow_file"
+
+case "$php_memory" in
+	''|*[!0-9KkMmGg]*)
+		php_memory='512M'
+		;;
+esac
+
+cat > /usr/local/etc/php/conf.d/local-memory.ini <<INI
+memory_limit=${php_memory}
+INI
 
 site_list() {
 	if [ -n "${SITES:-}" ]; then

@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis,
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.7-alpha`
-- `shubkb07/wp-local:0.0.7-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.8-alpha`
+- `shubkb07/wp-local:0.0.8-alpha`
 
 ## Install
 
@@ -35,12 +35,13 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.7-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.8-alpha
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
 LOCAL_WP_ENV_FILE=./.env
 MYSQL_USER=root
 MYSQL_PASSWORD=local_root_password
+PHP_MEMORY=512M
 SITES=apple.local,meow.local
 NO_DELETE_SITES=
 ```
@@ -55,6 +56,8 @@ NO_DELETE_SITES=
 When `SITES` changes, restart the container to regenerate those files and clean removed-site `*_local` databases plus matching `data/wp-sites/{host}` folders.
 
 Use `NO_DELETE_SITES=true` to disable removed-site cleanup entirely. Use a comma-separated list, such as `NO_DELETE_SITES=meow.local,apple.local`, to protect only those removed sites from database and folder deletion.
+
+`PHP_MEMORY` controls PHP `memory_limit`; the image defaults to `512M`.
 
 Adminer is available at `/adminer` on each configured host. It always opens the current host's database and fixes tampered `server`, `username`, and `db` query values.
 
