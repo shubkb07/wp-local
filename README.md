@@ -6,19 +6,25 @@ Image: `ghcr.io/shubkb07/wp-local:0.0.1-alpha`
 
 ## Install
 
+Install from the published image:
+
 ```sh
 git clone git@github.com:shubkb07/wp-local.git
 cd wp-local
+docker compose pull
 docker compose up -d
 ```
 
-If you want to change hostnames, port, site-data path, or the local database password:
+The repository includes a working `.env`. To customize it:
 
 ```sh
 cp .env.example .env
 # edit .env
+docker compose pull
 docker compose up -d
 ```
+
+Open the configured hosts after your host machine resolves them to localhost. For the default config, use `http://apple.local:8080` and `http://meow.local:8080`, or put nginx in front if you want `https://apple.local`.
 
 ## Config
 
@@ -33,11 +39,13 @@ MYSQL_PASSWORD=local_root_password
 SITES=apple.local,meow.local
 ```
 
-`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. MariaDB and Redis data are stored in Docker volumes managed by Compose.
+`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. MariaDB and Redis data are stored in Docker volumes managed by Compose.
 
 Adminer is available at `/adminer` on each configured host. It always opens the current host's database and fixes tampered `server`, `username`, and `db` query values.
 
 ## Local Image Build
+
+Only use this when developing the image locally:
 
 ```sh
 docker compose -f docker-compose.yml -f docker-compose.build.yml build web
@@ -53,4 +61,11 @@ For the default sites, the host machine must resolve:
 ```text
 127.0.0.1 apple.local
 127.0.0.1 meow.local
+```
+
+Useful commands:
+
+```sh
+docker compose logs -f web
+docker compose down --remove-orphans
 ```
