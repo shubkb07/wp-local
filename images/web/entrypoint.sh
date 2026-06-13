@@ -33,6 +33,39 @@ database_name_for_site() {
 	printf '%s' "$1" | sed 's/-/__/g; s/\./_/g'
 }
 
+no_delete_all() {
+	value=$(printf '%s' "${NO_DELETE_SITES:-}" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+	[ "$value" = "true" ] || [ "$value" = "1" ] || [ "$value" = "yes" ]
+}
+
+protected_site_list() {
+	if [ -n "${NO_DELETE_SITES:-}" ] && ! no_delete_all; then
+		printf '%s\n' "$NO_DELETE_SITES" | tr ',' '\n' | while IFS= read -r site; do
+			site=$(printf '%s' "$site" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+			[ -n "$site" ] || continue
+
+			case "$site" in
+				*[!a-z0-9.-]*)
+					continue
+					;;
+			esac
+
+			printf '%s\n' "$site"
+		done
+	fi
+}
+
+contains_word() {
+	case " $1 " in
+		*" $2 "*)
+			return 0
+			;;
+		*)
+			return 1
+			;;
+	esac
+}
+
 generate_local_files() {
 	hostnames=$(site_hostnames)
 	username=$(whoami)
@@ -117,28 +150,49 @@ FLUSH PRIVILEGES;
 SQL
 
 allowed_databases=" "
+allowed_sites=" "
 for site in $(site_list); do
+	allowed_sites="${allowed_sites}${site} "
 	allowed_databases="${allowed_databases}$(database_name_for_site "$site") "
 done
 
-mysql --socket=/run/mysqld/mysqld.sock $mysql_auth_args -N -B -e "SHOW DATABASES LIKE '%local';" | while IFS= read -r database; do
-	[ -n "$database" ] || continue
+protected_sites=" "
+protected_databases=" "
+for site in $(protected_site_list); do
+	protected_sites="${protected_sites}${site} "
+	protected_databases="${protected_databases}$(database_name_for_site "$site") "
+done
 
-	case "$database" in
-		*[!A-Za-z0-9_]*)
-			continue
-			;;
-	esac
+if ! no_delete_all; then
+	mysql --socket=/run/mysqld/mysqld.sock $mysql_auth_args -N -B -e "SHOW DATABASES LIKE '%local';" | while IFS= read -r database; do
+		[ -n "$database" ] || continue
 
-	case "$allowed_databases" in
-		*" $database "*)
-			;;
-		*)
+		case "$database" in
+			*[!A-Za-z0-9_]*)
+				continue
+				;;
+		esac
+
+		if ! contains_word "$allowed_databases" "$database" && ! contains_word "$protected_databases" "$database"; then
 			escaped_database=$(printf '%s' "$database" | sed 's/`/``/g')
 			mysql --socket=/run/mysqld/mysqld.sock $mysql_auth_args -e "DROP DATABASE IF EXISTS \`${escaped_database}\`;"
-			;;
-	esac
-done
+		fi
+	done
+
+	find /data/wp-sites -mindepth 1 -maxdepth 1 -type d | while IFS= read -r site_path; do
+		site=$(basename "$site_path" | tr '[:upper:]' '[:lower:]')
+
+		case "$site" in
+			*[!a-z0-9.-]*)
+				continue
+				;;
+		esac
+
+		if ! contains_word "$allowed_sites" "$site" && ! contains_word "$protected_sites" "$site"; then
+			rm -rf "$site_path"
+		fi
+	done
+fi
 
 redis-server --daemonize yes
 

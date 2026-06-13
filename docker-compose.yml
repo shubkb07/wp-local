@@ -1,6 +1,6 @@
 services:
   web:
-    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.3-alpha}
+    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.4-alpha}
     container_name: ${CONTAINER_NAME:-local-wp-web}
     restart: unless-stopped
     ports:
@@ -9,6 +9,7 @@ services:
       MYSQL_USER: ${MYSQL_USER:-root}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-local_root_password}
       SITES: ${SITES:-apple.local,meow.local}
+      NO_DELETE_SITES: ${NO_DELETE_SITES:-}
     volumes:
       - ${LOCAL_WP_DATA_PATH:-./data}:/data
       - ${WP_SITES_PATH:-./data/wp-sites}:/data/wp-sites
