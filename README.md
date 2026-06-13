@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis,
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.5-alpha`
-- `shubkb07/wp-local:0.0.5-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.6-alpha`
+- `shubkb07/wp-local:0.0.6-alpha`
 
 ## Install
 
@@ -35,7 +35,7 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.5-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.6-alpha
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
 LOCAL_WP_ENV_FILE=./.env
