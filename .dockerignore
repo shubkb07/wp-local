@@ -3,6 +3,10 @@
 !images/**
 !data/
 data/*
+!data/edits/
+data/edits/*
+!data/edits/twentytwentyfive/
+!data/edits/twentytwentyfive/**
 !data/wp-comman/
 data/wp-comman/*
 !data/wp-comman/wp-config.php

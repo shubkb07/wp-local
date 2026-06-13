@@ -1,6 +1,6 @@
 FROM wordpress:php8.3-apache
 
-ARG VERSION=0.0.1-alpha
+ARG VERSION=0.0.2-alpha
 
 LABEL org.opencontainers.image.title="wp-local" \
       org.opencontainers.image.description="Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis, and host-based site routing." \
@@ -21,12 +21,13 @@ ADD https://github.com/vrana/adminer/releases/download/v5.4.2/adminer-5.4.2.php 
 COPY data/wp-comman/adminer/ /usr/src/wordpress/adminer/
 COPY data/wp-comman/wp-config.php /usr/src/wordpress/wp-config.php
 COPY data/wp-comman/wp-resolve/ /usr/src/wordpress/wp-resolve/
+COPY data/edits/twentytwentyfive/ /usr/src/local-wp/themes/twentytwentyfive/
 COPY images/web/apache-vhost.conf /etc/apache2/sites-available/000-default.conf
 COPY images/web/entrypoint.sh /usr/local/bin/local-wp-web-entrypoint
 
 RUN set -eux; \
     chmod +x /usr/local/bin/local-wp-web-entrypoint; \
-    chown -R www-data:www-data /usr/src/wordpress/wp-config.php /usr/src/wordpress/wp-resolve /usr/src/wordpress/adminer /data/wp-sites; \
+    chown -R www-data:www-data /usr/src/wordpress/wp-config.php /usr/src/wordpress/wp-resolve /usr/src/wordpress/adminer /usr/src/local-wp /data/wp-sites; \
     chown -R mysql:mysql /run/mysqld /var/lib/mysql
 
 ENTRYPOINT ["local-wp-web-entrypoint"]

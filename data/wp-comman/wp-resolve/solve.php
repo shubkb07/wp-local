@@ -99,6 +99,13 @@ foreach (array($site_dir, $wp_content_dir, "{$wp_content_dir}/uploads", "{$wp_co
     }
 }
 
+$default_theme_source = '/usr/src/local-wp/themes/twentytwentyfive';
+$default_theme_target = "{$wp_content_dir}/themes/twentytwentyfive";
+
+if (is_dir($default_theme_source) && !is_dir($default_theme_target)) {
+    copy_directory($default_theme_source, $default_theme_target);
+}
+
 $site_wp_config = "{$site_dir}/wp-config.php";
 
 if (!is_file($site_wp_config)) {
@@ -143,3 +150,36 @@ define('DISALLOW_FILE_MODS', true);
 define('AUTOMATIC_UPDATER_DISABLED', true);
 define('WP_AUTO_UPDATE_CORE', false);
 define('WP_REDIS_HOST', '127.0.0.1');
+
+function copy_directory(string $source, string $target): void {
+    if (!is_dir($target) && !mkdir($target, 0775, true) && !is_dir($target)) {
+        http_response_code(500);
+        exit("Unable to create {$target}.");
+    }
+
+    $items = scandir($source);
+
+    if ($items === false) {
+        http_response_code(500);
+        exit("Unable to read {$source}.");
+    }
+
+    foreach ($items as $item) {
+        if ($item === '.' || $item === '..') {
+            continue;
+        }
+
+        $source_path = "{$source}/{$item}";
+        $target_path = "{$target}/{$item}";
+
+        if (is_dir($source_path)) {
+            copy_directory($source_path, $target_path);
+            continue;
+        }
+
+        if (!is_file($target_path) && !copy($source_path, $target_path)) {
+            http_response_code(500);
+            exit("Unable to copy {$source_path}.");
+        }
+    }
+}

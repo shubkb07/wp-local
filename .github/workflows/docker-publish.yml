@@ -38,7 +38,7 @@ jobs:
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=0.0.1-alpha,enable=${{ github.ref == 'refs/heads/master' }}
+            type=raw,value=0.0.2-alpha,enable=${{ github.ref == 'refs/heads/master' }}
             type=ref,event=tag
 
       - name: Build and push
@@ -48,6 +48,6 @@ jobs:
           file: images/web/Dockerfile
           push: true
           build-args: |
-            VERSION=0.0.1-alpha
+            VERSION=0.0.2-alpha
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
