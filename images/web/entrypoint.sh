@@ -17,7 +17,26 @@ esac
 
 cat > /usr/local/etc/php/conf.d/local-memory.ini <<INI
 memory_limit=${php_memory}
+upload_max_filesize=1024M
+post_max_size=1024M
+max_file_uploads=200
+max_execution_time=600
+max_input_time=600
+max_input_vars=10000
+default_socket_timeout=600
+realpath_cache_size=4096K
+realpath_cache_ttl=600
 INI
+
+mkdir -p /etc/mysql/mariadb.conf.d
+cat > /etc/mysql/mariadb.conf.d/99-local-wp.cnf <<'CNF'
+[mysqld]
+max_allowed_packet=1G
+net_read_timeout=600
+net_write_timeout=600
+wait_timeout=28800
+interactive_timeout=28800
+CNF
 
 site_list() {
 	if [ -n "${SITES:-}" ]; then
@@ -206,6 +225,7 @@ if ! no_delete_all; then
 fi
 
 redis-server --daemonize yes
+local-wp-cloudflared
 
 mkdir -p /var/www/html
 cp -a /usr/src/wordpress/wp-config.php /var/www/html/wp-config.php
