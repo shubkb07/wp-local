@@ -2,7 +2,7 @@
 
 Single-container local WordPress stack with Apache/PHP, Adminer, MariaDB, Redis, and host-based site routing.
 
-Image: `ghcr.io/shubkb07/wp-local:0.0.2-alpha`
+Image: `ghcr.io/shubkb07/wp-local:0.0.3-alpha`
 
 ## Install
 
@@ -32,7 +32,8 @@ Open the configured hosts after your host machine resolves them to localhost. Fo
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.2-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.3-alpha
+LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
 MYSQL_USER=root
 MYSQL_PASSWORD=local_root_password
@@ -41,7 +42,20 @@ SITES=apple.local,meow.local
 
 `WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. Each site gets a bundled `twentytwentyfive` theme if it is missing. MariaDB and Redis data are stored in Docker volumes managed by Compose.
 
+`LOCAL_WP_DATA_PATH` stores generated local helper files:
+
+- `data/local-wildcard.conf`
+- `data/make-changes.md`
+
+When `SITES` changes, restart the container to regenerate those files and clean removed `*_local` databases.
+
 Adminer is available at `/adminer` on each configured host. It always opens the current host's database and fixes tampered `server`, `username`, and `db` query values.
+
+WP-CLI is installed in the image:
+
+```sh
+docker compose exec web wp --info --allow-root
+```
 
 ## Local Image Build
 

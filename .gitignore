@@ -1,4 +1,6 @@
 data/wp-sites/
+data/local-wildcard.conf
+data/make-changes.md
 .DS_Store
 *.log
 task.md

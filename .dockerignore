@@ -5,6 +5,8 @@
 data/*
 !data/edits/
 data/edits/*
+!data/edits/local-wildcard.conf
+!data/edits/make-changes.md
 !data/edits/twentytwentyfive/
 !data/edits/twentytwentyfive/**
 !data/wp-comman/

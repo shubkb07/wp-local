@@ -8,22 +8,82 @@ adminer_user="${MYSQL_USER:-root}"
 mkdir -p "$(dirname "$allow_file")" /data/wp-sites /run/mysqld /var/lib/mysql
 : > "$allow_file"
 
-if [ -n "${SITES:-}" ]; then
-	printf '%s\n' "$SITES" | tr ',' '\n' | while IFS= read -r site; do
+site_list() {
+	if [ -n "${SITES:-}" ]; then
+		printf '%s\n' "$SITES" | tr ',' '\n' | while IFS= read -r site; do
+			site=$(printf '%s' "$site" | tr -d '[:space:]' | tr '[:upper:]' '[:lower:]')
+			[ -n "$site" ] || continue
+
+			case "$site" in
+				*[!a-z0-9.-]*)
+					continue
+					;;
+			esac
+
+			printf '%s\n' "$site"
+		done
+	fi
+}
+
+site_hostnames() {
+	site_list | paste -sd ' ' -
+}
+
+database_name_for_site() {
+	printf '%s' "$1" | sed 's/-/__/g; s/\./_/g'
+}
+
+generate_local_files() {
+	hostnames=$(site_hostnames)
+	username=$(whoami)
+	nginx_include_path='$(pwd)/data/local-wildcard.conf'
+
+	mkdir -p /data
+
+	sed \
+		-e "s/{{hostnames with space separated}}/${hostnames}/g" \
+		-e "s/{{username}}/${username}/g" \
+		/usr/src/local-wp/templates/local-wildcard.conf > /data/local-wildcard.conf
+
+	sed \
+		-e "s/{{hostnames with space separated}}/${hostnames}/g" \
+		-e "s#{{nginx include path}}#${nginx_include_path}#g" \
+		/usr/src/local-wp/templates/make-changes.md > /data/make-changes.md
+}
+
+sync_container_hosts() {
+	hostnames=$(site_hostnames)
+	[ -n "$hostnames" ] || return 0
+
+	tmp_file=$(mktemp)
+	sed '/# wp-local start/,/# wp-local end/d' /etc/hosts > "$tmp_file"
+	{
+		printf '\n# wp-local start\n'
+		printf '127.0.0.1 %s\n' "$hostnames"
+		printf '::1 %s\n' "$hostnames"
+		printf '# wp-local end\n'
+	} >> "$tmp_file"
+	cat "$tmp_file" > /etc/hosts
+	rm -f "$tmp_file"
+}
+
+generate_local_files
+sync_container_hosts
+
+site_list | while IFS= read -r site; do
 		site=$(printf '%s' "$site" | tr -d '[:space:]')
 		[ -n "$site" ] || continue
 
 		case "$site" in
-			*[!A-Za-z0-9.-]*)
+			*[!a-z0-9.-]*)
 				continue
 				;;
 		esac
 
 		escaped_site=$(printf '%s' "$site" | sed 's/\./\\./g')
-		db_name=$(printf '%s' "$site" | sed 's/-/__/g; s/\./_/g')
+		db_name=$(database_name_for_site "$site")
 		printf 'SetEnvIfNoCase Host "^%s(:[0-9]+)?$" ALLOWED_SITE=1 ADMINER_SERVER=%s ADMINER_USER=%s ADMINER_DB=%s\n' "$escaped_site" "$adminer_server" "$adminer_user" "$db_name" >> "$allow_file"
 	done
-fi
 
 chown -R www-data:www-data /data/wp-sites
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
@@ -55,6 +115,30 @@ ALTER USER 'root'@'%' IDENTIFIED BY '${mysql_password}';
 GRANT ALL PRIVILEGES ON *.* TO 'root'@'%' WITH GRANT OPTION;
 FLUSH PRIVILEGES;
 SQL
+
+allowed_databases=" "
+for site in $(site_list); do
+	allowed_databases="${allowed_databases}$(database_name_for_site "$site") "
+done
+
+mysql --socket=/run/mysqld/mysqld.sock $mysql_auth_args -N -B -e "SHOW DATABASES LIKE '%local';" | while IFS= read -r database; do
+	[ -n "$database" ] || continue
+
+	case "$database" in
+		*[!A-Za-z0-9_]*)
+			continue
+			;;
+	esac
+
+	case "$allowed_databases" in
+		*" $database "*)
+			;;
+		*)
+			escaped_database=$(printf '%s' "$database" | sed 's/`/``/g')
+			mysql --socket=/run/mysqld/mysqld.sock $mysql_auth_args -e "DROP DATABASE IF EXISTS \`${escaped_database}\`;"
+			;;
+	esac
+done
 
 redis-server --daemonize yes
 
