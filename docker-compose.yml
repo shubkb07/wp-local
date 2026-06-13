@@ -1,6 +1,6 @@
 services:
   web:
-    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.12-alpha}
+    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.13-alpha}
     container_name: ${CONTAINER_NAME:-local-wp-web}
     restart: unless-stopped
     ports:

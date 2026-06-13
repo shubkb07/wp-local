@@ -4,8 +4,36 @@ Single-container local WordPress stack with Apache/PHP, Adminer, Mailpit, MariaD
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.12-alpha`
-- `shubkb07/wp-local:0.0.12-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.13-alpha`
+- `shubkb07/wp-local:0.0.13-alpha`
+
+## Docker Overview
+
+`wp-local` is built as one Docker image for local WordPress development. The image includes Apache, PHP, WordPress core, Adminer, Mailpit, MariaDB, Redis, WP-CLI, cloudflared, and the local routing scripts used by this project.
+
+The Compose file runs only one service, `web`. Persistent data is split between:
+
+- Docker named volumes for MariaDB and Redis data
+- the host `data/` folder for generated helper files, per-site `wp-config.php`, and per-site `wp-content`
+
+This means image upgrades are simple:
+
+```sh
+docker compose pull
+docker compose up -d
+```
+
+WordPress core comes from the image. Site-owned files live under `data/wp-sites/{hostname}`, so themes, plugins, uploads, imports, and local edits stay outside the image.
+
+Use the GitHub Container Registry image or Docker Hub image:
+
+```env
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.13-alpha
+```
+
+```env
+WEB_IMAGE=shubkb07/wp-local:0.0.13-alpha
+```
 
 ## Requirements
 
@@ -56,7 +84,7 @@ https://meow.local
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.12-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.13-alpha
 
 LOCAL_WP_DATA_PATH=./data
 WP_SITES_PATH=./data/wp-sites
