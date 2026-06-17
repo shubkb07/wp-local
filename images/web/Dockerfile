@@ -1,6 +1,6 @@
 FROM wordpress:php8.3-apache
 
-ARG VERSION=0.0.13-alpha
+ARG VERSION=0.0.14-alpha
 
 LABEL org.opencontainers.image.title="wp-local" \
       org.opencontainers.image.description="Single-container local WordPress stack with Apache/PHP, Adminer, Mailpit, MariaDB, Redis, WP-CLI, cloudflared, and host-based site routing." \

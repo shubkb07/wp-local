@@ -1,6 +1,6 @@
 services:
   web:
-    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.13-alpha}
+    image: ${WEB_IMAGE:-ghcr.io/shubkb07/wp-local:0.0.14-alpha}
     container_name: ${CONTAINER_NAME:-local-wp-web}
     restart: unless-stopped
     ports:
@@ -16,6 +16,7 @@ services:
       NO_DELETE_SITES: ${NO_DELETE_SITES:-}
     volumes:
       - ${LOCAL_WP_DATA_PATH:-data}:/data
+      - ${WP_COMMON_PATH:-./data/wp-comman}:/data/wp-comman
       - ${WP_SITES_PATH:-./data/wp-sites}:/data/wp-sites
       - ${LOCAL_WP_ENV_FILE:-./.env}:/data/.env
       - db-data:/var/lib/mysql

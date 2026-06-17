@@ -6,7 +6,7 @@ mysql_password="${MYSQL_PASSWORD:-local_root_password}"
 php_memory="${PHP_MEMORY:-512M}"
 adminer_server="127.0.0.1"
 adminer_user="${MYSQL_USER:-root}"
-mkdir -p "$(dirname "$allow_file")" /data/wp-sites /run/mysqld /var/lib/mysql
+mkdir -p "$(dirname "$allow_file")" /data/wp-comman /data/wp-sites /run/mysqld /var/lib/mysql
 : > "$allow_file"
 
 case "$php_memory" in
@@ -128,6 +128,48 @@ contains_word() {
 	esac
 }
 
+refresh_common_core() {
+	common_path="/data/wp-comman"
+
+	mkdir -p "$common_path"
+
+	for core_dir in wp-admin wp-includes; do
+		source_path="/usr/src/wordpress/${core_dir}"
+		target_path="${common_path}/${core_dir}"
+
+		[ -d "$source_path" ] || continue
+
+		if [ -e "$target_path" ] || [ -L "$target_path" ]; then
+			rm -rf "$target_path"
+		fi
+
+		cp -a "$source_path" "$target_path"
+	done
+}
+
+link_common_core_to_site() {
+	site="$1"
+	site_path="/data/wp-sites/${site}"
+
+	mkdir -p "$site_path"
+
+	for core_dir in wp-admin wp-includes; do
+		link_path="${site_path}/${core_dir}"
+		link_target="../../wp-comman/${core_dir}"
+
+		if [ -L "$link_path" ]; then
+			current_target=$(readlink "$link_path" 2>/dev/null || true)
+			if [ "$current_target" = "$link_target" ]; then
+				continue
+			fi
+
+			rm -f "$link_path"
+		fi
+
+		[ -e "$link_path" ] || ln -s "$link_target" "$link_path"
+	done
+}
+
 generate_local_files() {
 	hostnames=$(site_hostnames)
 	username=$(host_username)
@@ -164,6 +206,7 @@ sync_container_hosts() {
 
 generate_local_files
 sync_container_hosts
+refresh_common_core
 
 site_list | while IFS= read -r site; do
 		site=$(printf '%s' "$site" | tr -d '[:space:]')
@@ -178,8 +221,10 @@ site_list | while IFS= read -r site; do
 		escaped_site=$(printf '%s' "$site" | sed 's/\./\\./g')
 		db_name=$(database_name_for_site "$site")
 		printf 'SetEnvIfNoCase Host "^%s(:[0-9]+)?$" ALLOWED_SITE=1 ADMINER_SERVER=%s ADMINER_USER=%s ADMINER_DB=%s\n' "$escaped_site" "$adminer_server" "$adminer_user" "$db_name" >> "$allow_file"
+		link_common_core_to_site "$site"
 	done
 
+chown -R www-data:www-data /data/wp-comman
 chown -R www-data:www-data /data/wp-sites
 chown -R mysql:mysql /run/mysqld /var/lib/mysql
 

@@ -4,8 +4,8 @@ Single-container local WordPress stack with Apache/PHP, Adminer, Mailpit, MariaD
 
 Images:
 
-- `ghcr.io/shubkb07/wp-local:0.0.13-alpha`
-- `shubkb07/wp-local:0.0.13-alpha`
+- `ghcr.io/shubkb07/wp-local:0.0.14-alpha`
+- `shubkb07/wp-local:0.0.14-alpha`
 
 ## Docker Overview
 
@@ -28,11 +28,11 @@ WordPress core comes from the image. Site-owned files live under `data/wp-sites/
 Use the GitHub Container Registry image or Docker Hub image:
 
 ```env
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.13-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.14-alpha
 ```
 
 ```env
-WEB_IMAGE=shubkb07/wp-local:0.0.13-alpha
+WEB_IMAGE=shubkb07/wp-local:0.0.14-alpha
 ```
 
 Docker images are published to GitHub Container Registry and Docker Hub when a version tag is pushed. Docker Hub overview publishing uses the repository `README.md`; the GitHub secret `DOCKER_PAT` must be a Docker Hub personal access token with read, write, and delete permissions for the `shubkb07/wp-local` repository.
@@ -86,9 +86,10 @@ https://meow.local
 
 ```env
 APACHE_HTTP_PORT=8080
-WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.13-alpha
+WEB_IMAGE=ghcr.io/shubkb07/wp-local:0.0.14-alpha
 
 LOCAL_WP_DATA_PATH=./data
+WP_COMMON_PATH=./data/wp-comman
 WP_SITES_PATH=./data/wp-sites
 LOCAL_WP_ENV_FILE=./.env
 
@@ -106,7 +107,9 @@ NO_DELETE_SITES=
 
 `SITES` is a comma-separated list of local hostnames. Each site gets its own database name by replacing `.` with `_` and `-` with `__`; for example, `neuro-ai.local` becomes `neuro__ai_local`.
 
-`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. When a site's `wp-content` folder does not exist yet, wp-local creates `uploads`, `themes`, and `plugins`, then adds the bundled `twentytwentyfive` theme. Existing `wp-content` folders are left alone.
+`WP_COMMON_PATH` stores host-visible common WordPress files. On startup, wp-local refreshes `data/wp-comman/wp-admin` and `data/wp-comman/wp-includes` from the image so code editors can index WordPress core.
+
+`WP_SITES_PATH` stores each site's `wp-config.php` and `wp-content`. WordPress core is provided by the image. On startup, each configured site folder gets `wp-admin` and `wp-includes` symlinks pointing at `data/wp-comman`, which helps editor indexing and function autocompletion when working under `data/wp-sites/{hostname}`. When a site's `wp-content` folder does not exist yet, wp-local creates `uploads`, `themes`, and `plugins`, then adds the bundled `twentytwentyfive` theme. Existing `wp-content` folders are left alone.
 
 MariaDB and Redis are stored in Docker named volumes, so data survives image upgrades. They are removed only if you run a volume-removing command such as `docker compose down -v`.
 

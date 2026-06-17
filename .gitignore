@@ -1,4 +1,7 @@
 data/wp-sites/
+data/.env
+data/wp-comman/wp-admin/
+data/wp-comman/wp-includes/
 data/local-wildcard.conf
 data/make-changes.md
 .DS_Store
